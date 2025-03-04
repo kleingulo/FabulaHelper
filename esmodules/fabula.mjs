@@ -1,17 +1,16 @@
 class FabulaHelper{
 	static ID = 'GuloFabulaHelper';
 	
-	static updateZeroPower(actor){
-		var zero = actor.items.filter((item) => item.system.optionalType == "projectfu.zeroPower")[0]
-		if(!!zero)
+	static updateZeroPower(item, patch){
+		if(item.system.optionalType == "projectfu.zeroPower")
 		{
-			var value = zero.system.data.progress.current
-			var max = zero.system.data.progress.max
+			var value = patch.system.data.progress.current
+			var max = item.system.data.progress.max
 			//actor.system.resources.zero = {"value":value, "max":max};
-			actor.setFlag(FabulaHelper.ID, 'zeroPower', {"value":value, "max":max});
+			item.parent.setFlag(FabulaHelper.ID, 'zeroPower', {"value":value, "max":max});
 		}
 		else{
-			actor.setFlag(FabulaHelper.ID, 'zeroPower', {"value":0, "max":0});
+			item.parent.setFlag(FabulaHelper.ID, 'zeroPower', {"value":0, "max":0});
 		}
 		
 	};
@@ -24,4 +23,4 @@ class FabulaHelper{
 }
 
 Hooks.on('init', FabulaHelper.initialize);
-Hooks.on('projectfu.actor.dataPrepared', (actor) => FabulaHelper.updateZeroPower(actor));
+Hooks.on('preUpdateItem', (item, patch, modified) => FabulaHelper.updateZeroPower(item, patch));
