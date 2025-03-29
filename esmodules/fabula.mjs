@@ -9,9 +9,6 @@ class FabulaHelper{
 			//actor.system.resources.zero = {"value":value, "max":max};
 			item.parent.setFlag(FabulaHelper.ID, 'zeroPower', {"value":value, "max":max});
 		}
-		else{
-			item.parent.setFlag(FabulaHelper.ID, 'zeroPower', {"value":0, "max":0});
-		}
 		
 	};
 
