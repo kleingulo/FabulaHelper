@@ -15,6 +15,7 @@ class FabulaHelper{
 	static initialize()
 	{
 		CONFIG.Actor.trackableAttributes.character.bar.push("parent.flags."+FabulaHelper.ID+".zeroPower");
+		game.settings.set("barbrawl","heightMultiplier", 2);
 	}
 
 }
@@ -55,13 +56,13 @@ function fireMacro(actor, item)
 	{
 		if(item.system.targeting.rule == "self")
 			{
-			item.executeMacro({"src":src, "tgt":null, "cnt":0});
+			item.executeMacro({"src":src, "tgt":null, "cnt":0, "max":1});
 			}
 	}
 	
 	game.user.targets.ids.forEach((targetid) => {
 	var tgt = canvas.tokens.get(targetid);
-	item.executeMacro({"src":src, "tgt":tgt, "cnt":count});
+	item.executeMacro({"src":src, "tgt":tgt, "cnt":count, "max":game.user.targets.ids.length});
 	count = count+1;
 	});
 }
