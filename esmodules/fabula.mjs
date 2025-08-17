@@ -15,7 +15,6 @@ class FabulaHelper{
 	static initialize()
 	{
 		CONFIG.Actor.trackableAttributes.character.bar.push("parent.flags."+FabulaHelper.ID+".zeroPower");
-		game.settings.set("barbrawl","heightMultiplier", 2);
 	}
 
 }
@@ -68,6 +67,7 @@ function fireMacro(actor, item)
 }
 
 Hooks.on('init', FabulaHelper.initialize);
+Hooks.once('ready', () => {game.settings.set("barbrawl","heightMultiplier", 2);});
 Hooks.on('preUpdateItem', (item, patch, modified) => FabulaHelper.updateZeroPower(item, patch));
 Hooks.on("projectfu.processCheck", processCheckHook);
 Hooks.on("preCreateChatMessage", chatMessageHook);
