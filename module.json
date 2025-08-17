@@ -1,20 +1,30 @@
 {
-	"id": "GuloFabulaHelper",
-	"title": "FabulaHelper",
-	"description": "FabulaHelper",
-	"manifest": "https://github.com/kleingulo/FabulaHelper/releases/download/Latest/module.json",
-	"download": "https://github.com/kleingulo/FabulaHelper/archive/refs/tags/V1.0.7.zip",
-	"authors": [
-		{
-			"name": "KleinGulo"
-		}
-	],
-	"esmodules": [
-		"esmodules/fabula.mjs"
-	],
-	"version": "1.0.7",
-	"compatibility": {
-		"minimum": "10",
-		"verified": "13"
-	}
+  "id": "GuloFabulaHelper",
+  "title": "FabulaHelper",
+  "description": "FabulaHelper",
+  "manifest": "https://github.com/kleingulo/FabulaHelper/releases/download/Latest/module.json",
+  "download": "https://github.com/kleingulo/FabulaHelper/archive/refs/tags/V1.0.7.zip",
+  "authors": [
+    {
+      "name": "KleinGulo",
+      "flags": {}
+    }
+  ],
+  "esmodules": [
+    "esmodules/fabula.mjs"
+  ],
+  "version": "1.0.7",
+  "compatibility": {
+    "minimum": "10",
+    "verified": "13"
+  },
+  "relationships": {
+    "requires": [
+      {
+        "id": "barbrawl",
+        "type": "module",
+        "compatibility": {}
+      }
+    ]
+  }
 }
