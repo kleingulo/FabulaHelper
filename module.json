@@ -18,13 +18,10 @@
     "minimum": "10",
     "verified": "13"
   },
-  "relationships": {
-    "requires": [
+  "dependencies": [
       {
-        "id": "barbrawl",
-        "type": "module",
-        "compatibility": {}
+        "name": "barbrawl",
+        "type": "module"
       }
-    ]
-  }
+  ]
 }
