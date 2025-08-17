@@ -16,7 +16,6 @@ class FabulaHelper{
 	{
 		CONFIG.Actor.trackableAttributes.character.bar.push("parent.flags."+FabulaHelper.ID+".zeroPower");
 	}
-
 }
 
 function processCheckHook(check, actor, item)
