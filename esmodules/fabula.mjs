@@ -373,7 +373,7 @@ drawNPCBars(actor, idx) {
     const panelWidth = 840;
     const panelHeight = 240;
     const menuX = sceneWidth/2 - panelWidth/2;
-    const menuY = canvas.scene.dimensions.sceneY + sceneHeight - panelHeight +20;
+    const menuY = canvas.scene.dimensions.sceneY + sceneHeight - panelHeight - 40;
 
     const menu = new PIXI.Container();
     menu.x = menuX;
