@@ -151,21 +151,26 @@ class JRPGPartyLayer extends CanvasLayer {
     return bg;
   }
 
-  drawBar(val, max, color, barWidth, barHeight) {
+  drawBar(val, max, color, barWidth, barHeight, color2) {
     if (val === undefined || val === null || max === undefined || max === null) return null;
     let pct = Math.clamped(val / max, 0, 1);
 
-    const g = new PIXI.Graphics();
-    g.beginFill(0x000000, 0.6);
-    g.lineStyle(1, 0x000000, 1, 1);
-    g.drawRoundedRect(0, 0, barWidth, barHeight, 1);
-    g.endFill();
+    if(color2) color = this.lerpColor(color, color2, pct);
 
-    g.beginFill(color, 0.9);
+    const bg = new PIXI.Graphics();
+    bg.beginFill(0x000000, 0.6);
+    bg.lineStyle(1, 0x000000, 1, 1);
+    bg.drawRoundedRect(0, 0, barWidth, barHeight, 1);
+    bg.endFill();
+
+    const g = new PIXI.Graphics();
+    g.beginFill(color, 1);
     g.drawRoundedRect(0, 0, barWidth * pct, barHeight, 1);
     g.endFill();
 
-    return g;
+    bg.addChild(g);
+
+    return bg;
   }
 
 
@@ -198,6 +203,58 @@ drawFlavourMenu() {
   flbg.addChild(flborder);
   flmenu.addChild(flbg);
   return flmenu;
+}
+
+lerpColor(color1, color2, t) {
+  const c1 = PIXI.utils.hex2rgb(color1);
+  const c2 = PIXI.utils.hex2rgb(color2);
+
+  const r = c1[0] + (c2[0] - c1[0]) * t;
+  const g = c1[1] + (c2[1] - c1[1]) * t;
+  const b = c1[2] + (c2[2] - c1[2]) * t;
+
+  return PIXI.utils.rgb2hex([r, g, b]);
+}
+
+makeBlink(displayObject) {
+  const ticker = PIXI.Ticker.shared;
+  let direction = -1;
+  
+  const blink = (delta) => {
+    displayObject.alpha += direction * 0.01 * delta;
+    if (displayObject.alpha <= 0.5) direction = 1;
+    if (displayObject.alpha >= 1.0) direction = -1;
+  };
+
+  ticker.add(blink);
+
+  // Optional: merken, damit du den Effekt wieder stoppen kannst
+  displayObject._blink = blink;
+}
+
+makeBrightBlink(displayObject) {
+  const filter = new PIXI.filters.ColorMatrixFilter();
+  displayObject.filters = [filter];
+
+  const ticker = PIXI.Ticker.shared;
+  let elapsed = 0;
+
+  const blink = (delta) => {
+    elapsed += delta / 60;
+    const brightness = 1 + 0.5 * Math.sin(elapsed * 4); 
+    filter.brightness(brightness, false);
+  };
+
+  ticker.add(blink);
+  displayObject._blink = blink;
+}
+
+stopBlink(displayObject) {
+  if (displayObject._blink) {
+    PIXI.Ticker.shared.remove(displayObject._blink);
+    delete displayObject._blink;
+    displayObject.alpha = 1.0; // zurücksetzen
+  }
 }
 
 drawCharBars(actor, idx) {
@@ -237,6 +294,11 @@ drawCharBars(actor, idx) {
     // HP (rot)
     const hpBar = this.drawBar(hp?.value, hp?.max, 0xff0000, barWidth, barHeight);
     if (hpBar) {
+      if (hp?.value / hp?.max <= 0.50) {
+        this.makeBlink(hpBar.children[0]);
+      } else {
+        this.stopBlink(hpBar.children[0]);
+      }
       hpBar.position.set(barX, barY);
       charBars.addChild(hpBar);
 
@@ -267,8 +329,13 @@ drawCharBars(actor, idx) {
     }
 
     // zero (gelb)
-    const cBar = this.drawBar(zero?.value, zero?.max, 0xffff00, barWidth, barHeight);
+    const cBar = this.drawBar(zero?.value, zero?.max, 0xFFFFE0, barWidth, barHeight, 0xffff00);
     if (cBar) {
+      if (zero?.value == zero?.max) {
+        this.makeBrightBlink(cBar.children[0]);
+      } else {
+        this.stopBlink(cBar.children[0]);
+      }
       cBar.position.set(barX, barY);
       charBars.addChild(cBar);
 
@@ -279,76 +346,6 @@ drawCharBars(actor, idx) {
       txt.x = cBar.width/2;
       cBar.addChild(txt);
     }
-    // Position Panel
-    //container.position.set(startX + idx * (panelWidth + spacing), startY);
-    return charBars;
-  }
-
-drawNPCBars(actor, idx) {
-  const charBars = new PIXI.Container();
-
-    // Ressourcenwerte
-    const hp = getProperty(actor, "system.resources.hp");
-    const mp = getProperty(actor, "system.resources.mp");
-
-    let barX = 360;
-    let barY = 30 + (28 * idx);
-    let barWidth = 128;
-    let barHeight = 12;
-    let barSpacing = 38;
-
-
-    const barStyle = {
-        trim: true, 
-        fontSize: 10, 
-        fontFamily: "Signika", 
-        fill: "#ffffff", 
-        stroke: "#000000", 
-        strokeThickness: 2
-    }
-
-    //name
-    const namesprite = PIXI.Sprite.from(`modules/GuloFabulaHelper/assets/${actor.name}.png`);
-    if (namesprite)
-    {
-      namesprite.x = 210;
-      namesprite.y = barY;
-      charBars.addChild(namesprite);
-    }
-
-
-    // HP (rot)
-    const hpBar = this.drawBar(hp?.value, hp?.max, 0xff0000, barWidth, barHeight);
-    if (hpBar) {
-      hpBar.position.set(barX, barY);
-      charBars.addChild(hpBar);
-
-      const txt = new PIXI.Text(`${hp.value}/${hp.max}`, barStyle);
-
-      txt.resolution = 5;
-      txt.anchor.x = 0.5;
-      txt.x = hpBar.width/2;
-      hpBar.addChild(txt);
-
-      barX += barWidth + barSpacing;
-    }
-
-    // MP (blau)
-    const mpBar = this.drawBar(mp?.value, mp?.max, 0x80B3FF, barWidth, barHeight);
-    if (mpBar) {
-      mpBar.position.set(barX, barY);
-      charBars.addChild(mpBar);
-
-      const txt = new PIXI.Text(`${mp.value}/${mp.max}`, barStyle);
-
-      txt.resolution = 5;
-      txt.anchor.x = 0.5;
-      txt.x = mpBar.width/2;
-      mpBar.addChild(txt);
-
-      barX += barWidth + barSpacing;
-    }
-
     // Position Panel
     //container.position.set(startX + idx * (panelWidth + spacing), startY);
     return charBars;
@@ -386,16 +383,8 @@ drawNPCBars(actor, idx) {
 
 
     actors.forEach((actor, idx) => {
-      let charBars;
-      if(actor.type === 'npc')
-      {
-        charBars = this.drawCharBars(actor, idx);
-      }
-      else
-      {
-        charBars = this.drawCharBars(actor, idx);
-      }
-      
+      const charBars = this.drawCharBars(actor, idx);
+
       menu.addChild(charBars);
       this.bars.set(actor.id, charBars);
     
