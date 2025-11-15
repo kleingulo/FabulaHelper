@@ -16,9 +16,30 @@ class FabulaHelper{
 
 	static initialize()
 	{
-		CONFIG.Actor.trackableAttributes.character.bar.push("parent.flags."+FabulaHelper.ID+".zeroPower");
-	}
+    CONFIG.Actor.trackableAttributes.character.bar.push("parent.flags."+FabulaHelper.ID+".zeroPower");
+    CONFIG.Canvas.layers["jrpgParty"] = {
+      layerClass: JRPGPartyLayer,
+      group: "interface"
+    };
+    Hooks.once("ready", () => {
+      console.log("Registering GuloFabulaHelper socket after ready");
+      game.socket.on("module.GuloFabulaHelper", (data) => {
+        console.log("GuloFabulaHelper socket received:", data);
+        if (data.action === "redraw") {
+          if (canvas.jrpgParty) {
+            canvas.jrpgParty.redrawAll();
+          }
+        }
+      });
+    });
+  }
+
+  static update_clients() {
+    console.log("FabulaHelper: emitting redraw to all clients");
+    game.socket.emit("module.GuloFabulaHelper", { action: "redraw"});
+  }
 }
+
 
 function processCheckHook(check, actor, item)
 {
@@ -45,7 +66,7 @@ function chatMessageHook(chatMessage, speaker, mod)
 			}
 		}
 	}
-}
+};
 
 function fireMacro(actor, item)
 {
@@ -65,37 +86,25 @@ function fireMacro(actor, item)
 	item.executeMacro({"src":src, "tgt":tgt, "cnt":count, "max":game.user.targets.ids.length});
 	count = count+1;
 	});
-}
+};
 
-
-
-Hooks.once("init", () => {
-  CONFIG.Canvas.layers["jrpgParty"] = {
-    layerClass: JRPGPartyLayer,
-    group: "interface"
-  };
-});
-
-Hooks.on('init', FabulaHelper.initialize);
-Hooks.once('ready', () => {game.settings.set("barbrawl","heightMultiplier", 2);});
-Hooks.on('preUpdateItem', (item, patch, modified) => FabulaHelper.updateZeroPower(item, patch));
-Hooks.on("projectfu.processCheck", processCheckHook);
-Hooks.on("preCreateChatMessage", chatMessageHook);
-
-
-
+window.FabulaHelper = FabulaHelper;
 
 class JRPGPartyLayer extends CanvasLayer {
+  static group = "interface";
+  
   constructor() {
     super();
     this.bars = new Map();
+    this.fontReady = document.fonts.load("64px 'Pixel Operator'");
+    this.topbox = null;
   }
 
-  draw() {
-    super.draw();
+  _draw(options) {
     this.redrawAll();
     return this;
   }
+
 
   makeGradientTexture(width, height, colors) {
     const c = document.createElement("canvas");
@@ -111,6 +120,34 @@ class JRPGPartyLayer extends CanvasLayer {
     ctx.fillRect(0, 0, width, height);
 
     return PIXI.Texture.from(c);
+  }
+
+
+  drawBox(x, y, width, height)
+  {
+    const bggradient = this.makeGradientTexture(width, height, ["#070ee4", "#000000"]);
+    const box = new PIXI.Sprite(bggradient)
+    box.x = x;
+    box.y = y;
+
+    //border
+    const border = new PIXI.Graphics();
+    border.lineStyle(4, 0xffffff, 1);
+    border.drawRoundedRect(0, 0, width, height, 6);
+    border.endFill();
+    
+    //mask
+    const mask = new PIXI.Graphics();
+    mask.beginFill(0xffffff);
+    mask.drawRoundedRect(0, 0, width, height, 6);
+    mask.endFill();
+    box.addChild(mask);
+    box.mask = mask;
+
+    box.addChild(border);
+    this.addChild(box);
+
+    return box;
   }
 
   drawBackground(x, y, width, height) {
@@ -290,7 +327,6 @@ drawCharBars(actor, idx) {
       charBars.addChild(namesprite);
     }
 
-
     // HP (rot)
     const hpBar = this.drawBar(hp?.value, hp?.max, 0xff0000, barWidth, barHeight);
     if (hpBar) {
@@ -351,6 +387,30 @@ drawCharBars(actor, idx) {
     return charBars;
   }
 
+  actionNameBox(name)
+  {
+    const text = new PIXI.Text(name, {
+      fontFamily: "Pixel Operator",
+      fontSize: 48,
+      fill: "#ffffff",          // Textfarbe
+      stroke: "#000000",        // Konturfarbe
+      strokeThickness: 3,       // Konturstärke
+      dropShadow: true,         // optional
+      dropShadowColor: "#000000",
+      dropShadowDistance: 2
+    });
+    text.anchor.x = 0.5;
+    text.anchor.y = 0.5;
+    text.resolution = 5;
+    text.roundPixels = true;
+
+    var panelWidth = 840;
+    text.x = panelWidth / 2;
+    text.y = 40;
+    var box = this.drawBox(canvas.scene.dimensions.width/2 - panelWidth/2, canvas.scene.getDimensions().sceneY + 50, panelWidth, 80);
+    box.addChild(text);
+  }
+
   redrawAll() {
     this.removeChildren();
     this.bars.clear();
@@ -390,14 +450,33 @@ drawCharBars(actor, idx) {
     
     });
     this.addChild(menu);
+    const actionText = game.scenes.current.getFlag(FabulaHelper.ID, 'actionText');
+    if(actionText) this.actionNameBox(actionText);
   }
-}
 
-Hooks.once("init", () => {
-  CONFIG.Canvas.layers["jrpgParty"] = {
-    layerClass: JRPGPartyLayer,
-    group: "interface"
-  };
+
+
+  setbox(name)
+  {
+    game.scenes.current.setFlag(FabulaHelper.ID, "actionText", name);
+  }
+
+  clearbox()
+  {
+    this.setbox("");
+  }
+
+};
+
+Hooks.once('init', FabulaHelper.initialize);
+Hooks.once('ready', () => {game.settings.set("barbrawl","heightMultiplier", 2);});
+Hooks.on('preUpdateItem', (item, patch, modified) => FabulaHelper.updateZeroPower(item, patch));
+Hooks.on("projectfu.processCheck", processCheckHook);
+Hooks.on("preCreateChatMessage", chatMessageHook);
+Hooks.on("updateScene", (scene, update) => {
+  if (update.flags?.GuloFabulaHelper?.actionText !== undefined) {
+    canvas.jrpgParty?.redrawAll();
+  }
 });
 
 // Neu zeichnen bei Änderungen
