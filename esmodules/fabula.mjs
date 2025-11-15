@@ -407,14 +407,14 @@ drawCharBars(actor, idx) {
     var panelWidth = 840;
     text.x = panelWidth / 2;
     text.y = 40;
-    var box = this.drawBox(canvas.scene.dimensions.width/2 - panelWidth/2, canvas.scene.getDimensions().sceneY + 50, panelWidth, 80);
+    var box = this.drawBox(canvas.scene.dimensions.width/2 - panelWidth/2, canvas.scene.getDimensions().sceneY + 50 + 5*60, panelWidth, 80);
     box.addChild(text);
   }
 
   redrawAll() {
     this.removeChildren();
     this.bars.clear();
-    const heroes = game.scenes.current.getFlag(FabulaHelper.ID, 'heroes');
+    const heroes = canvas.scene.getFlag(FabulaHelper.ID, 'heroes');
     if(!heroes) return;
 
     //const actors = game.actors.filter(a => a.hasPlayerOwner);
@@ -450,15 +450,14 @@ drawCharBars(actor, idx) {
     
     });
     this.addChild(menu);
-    const actionText = game.scenes.current.getFlag(FabulaHelper.ID, 'actionText');
+    const actionText = canvas.scene.getFlag(FabulaHelper.ID, 'actionText');
     if(actionText) this.actionNameBox(actionText);
   }
 
 
-
   setbox(name)
   {
-    game.scenes.current.setFlag(FabulaHelper.ID, "actionText", name);
+    canvas.scene.setFlag(FabulaHelper.ID, "actionText", name);
   }
 
   clearbox()
