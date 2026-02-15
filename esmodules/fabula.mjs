@@ -46,7 +46,19 @@ function processCheckHook(check, actor, item)
   // Trigger the item roll
 	if (item.hasMacro())
 	{
-		fireMacro(item.parent, item);
+    if(item.system.optionalType == "projectfu.zeroPower")
+    {
+      const clock = item.system.data;
+      if(clock.progress.current == clock.progress.max)
+      {
+        item.update({"system.data.progress.current":0});
+        fireMacro(item.parent, item);
+      }
+    }
+    else
+    {
+		  fireMacro(item.parent, item);
+    }
 	}
 }
 
@@ -61,31 +73,37 @@ function chatMessageHook(chatMessage, speaker, mod)
 			{
 				if (item.hasMacro())
 				{
-					fireMacro(item.parent, item);
+            fireMacro(item.parent, item);
 				}
 			}
 		}
 	}
 };
 
-function fireMacro(actor, item)
+async function fireMacro(actor, item)
 {
 	var protoname = actor.prototypeToken.name;
 	var src = canvas.tokens.ownedTokens.find((token) => token.name == protoname);
 	var count = 0;
+
+  canvas.jrpgParty.setbox(item.name);
+  setTimeout(() => {canvas.jrpgParty.clearbox();}, 3000);
+
 	if(item.system.hasOwnProperty("targeting"))
 	{
 		if(item.system.targeting.rule == "self")
 			{
-				item.executeMacro({"src":src, "tgt":null, "cnt":0, "max":1});
+        item.executeMacro({"src":src, "tgt":null, "cnt":0, "max":1});
 			}
 	}
 	
 	game.user.targets.ids.forEach((targetid) => {
 	var tgt = canvas.tokens.get(targetid);
-	item.executeMacro({"src":src, "tgt":tgt, "cnt":count, "max":game.user.targets.ids.length});
+
+  item.executeMacro({"src":src, "tgt":tgt, "cnt":count, "max":game.user.targets.ids.length});
 	count = count+1;
 	});
+
 };
 
 window.FabulaHelper = FabulaHelper;
@@ -407,7 +425,7 @@ drawCharBars(actor, idx) {
     var panelWidth = 840;
     text.x = panelWidth / 2;
     text.y = 40;
-    var box = this.drawBox(canvas.scene.dimensions.width/2 - panelWidth/2, canvas.scene.getDimensions().sceneY + 50 + 5*60, panelWidth, 80);
+    var box = this.drawBox(canvas.scene.dimensions.width/2 - panelWidth/2, canvas.scene.getDimensions().sceneY + 140, panelWidth, 80);
     box.addChild(text);
   }
 
@@ -430,7 +448,7 @@ drawCharBars(actor, idx) {
     const panelWidth = 840;
     const panelHeight = 240;
     const menuX = sceneWidth/2 - panelWidth/2;
-    const menuY = canvas.scene.dimensions.sceneY + sceneHeight - panelHeight - 40;
+    const menuY = canvas.scene.dimensions.sceneY + sceneHeight - panelHeight - 80;
 
     const menu = new PIXI.Container();
     menu.x = menuX;
